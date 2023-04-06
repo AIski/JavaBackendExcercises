@@ -1,6 +1,7 @@
 package pl.alski;
 
 import pl.alski.excercises.easy.TwoToOne;
+import pl.alski.excercises.medium.PlayingWithDigits;
 import pl.alski.excercises.notFinished.LineSafari;
 
 public class Main {
@@ -38,12 +39,16 @@ public class Main {
         ////longest(a, a) -> "abcdefghijklmnopqrstuvwxyz"
 
 
-        LineSafari lineSafari = new LineSafari();
-        char[][] game = {
-                ' ',' ',          ",
-                "X---------X",
-                "           ",
-                "           "
-        });
+//        LineSafari lineSafari = new LineSafari();
+//        char[][] game = {
+//                ' ',' ',          ",
+//                "X---------X",
+//                "           ",
+//                "           "
+//        });
+
+        PlayingWithDigits playingWithDigits = new PlayingWithDigits();
+        playingWithDigits.digPow(89,1);
+        playingWithDigits.digPow(46288, 3);
     }
 }

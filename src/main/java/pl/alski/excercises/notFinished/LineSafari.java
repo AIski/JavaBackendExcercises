@@ -81,18 +81,56 @@ public class LineSafari {
         Stack<Point> recentMoves = new Stack<>();
         System.out.println("Starting point: "+ startPoint.x + ":"+ startPoint.y);
         System.out.println("End point: "+ endPoint.x + ":"+ endPoint.y);
+
         while (hasNeighbour) {
             List<Point> possibleMoves = getPossibleMoves(currentPoint, recentMoves, grid);
             if (possibleMoves.size()==0){
-                hasNeighbour=false;
-                return (gridAtPoint(currentPoint, grid) == 'X' && gridAtPoint(startPoint, grid)== 'X');
+                checkAllFieldsWereUsed(grid, recentMoves);
+                hasNeighbour= false;
+                return checkGameWasFinished(grid, currentPoint, recentMoves);
             }
-            if (possibleMoves.size()==1){
+            else if (possibleMoves.size()==1){
                 doMove(currentPoint, recentMoves, possibleMoves.get(0));
             }
-            //if got more than 1 possible move think of backup save of the grid, plus variants
+            else {
+                tryEachRoute(currentPoint, recentMoves, possibleMoves);
+            }
+
         }
         return false;
+    }
+
+    private static boolean checkGameWasFinished( char[][] grid, Point currentPoint, Stack<Point> recentMoves) {
+        boolean allFieldsWereUsed = checkAllFieldsWereUsed(grid, recentMoves);
+        boolean endsWithX = grid[currentPoint.y][currentPoint.x] == 'X';
+        return allFieldsWereUsed && endsWithX;
+    }
+
+    private static boolean checkAllFieldsWereUsed(char[][] grid, Stack<Point> recentMoves) {
+        List<Point> allFieldsToUse = getAllFieldsToUse(grid);
+        for (Point p: allFieldsToUse){
+            if (!recentMoves.contains(p)){
+                System.out.println("Some fields were not used!");
+                return false;
+            }
+        }
+        System.out.println("Nice! All fields were used!");
+        return true;
+    }
+
+    private static List<Point> getAllFieldsToUse(char[][] grid) {
+        List<Point> allFieldsToUse = new ArrayList<>();
+        for (int x = 0; x < grid[0].length; x++) {
+            for (int y = 0; y < grid.length; y++) {
+                if (grid[y][x] != ' ') {
+                    allFieldsToUse.add(new Point(x, y));
+                }
+            }
+        }
+        return allFieldsToUse;
+    }
+
+    private static void tryEachRoute(Point currentPoint, Stack<Point> recentMoves, List<Point> possibleMoves) {
     }
 
     private static void doMove(Point currentPoint, Stack<Point> recentMoves,  Point nextPoint) {
@@ -103,10 +141,8 @@ public class LineSafari {
         System.out.println("Moved to point: "+ currentPoint.x + ":"+ currentPoint.y);
     }
 
-    private static char gridAtPoint(Point currentPoint, char[][] grid) {
-        System.out.println("Grid at point: "+ currentPoint.x + ":"+ currentPoint.y+" is "+ grid[currentPoint.y][currentPoint.x]);
-        return grid[currentPoint.y][currentPoint.x];
-    }
+
+
 
     private static List<Point> getPossibleMoves(Point currentPoint, Stack<Point> recentMoves, char[][] grid) {
         List<Point> possibleMoves = new ArrayList<>();
