@@ -77,39 +77,41 @@ public class LineSafari {
     private static boolean walkTheLine(Point startPoint, Point endPoint, char[][] grid) {
         Point currentPoint = startPoint;
         Point previousPoint = new Point();
-        boolean hasNeighbour = true;
         Stack<Point> recentMoves = new Stack<>();
-        System.out.println("Starting point: "+ startPoint.x + ":"+ startPoint.y);
-        System.out.println("End point: "+ endPoint.x + ":"+ endPoint.y);
+        System.out.println("Starting point: " + startPoint.x + ":" + startPoint.y);
+        System.out.println("End point: " + endPoint.x + ":" + endPoint.y);
 
-        while (hasNeighbour) {
-            List<Point> possibleMoves = getPossibleMoves(currentPoint, recentMoves, grid);
-            if (possibleMoves.size()==0){
-                checkAllFieldsWereUsed(grid, recentMoves);
-                hasNeighbour= false;
-                return checkGameWasFinished(grid, currentPoint, recentMoves);
-            }
-            else if (possibleMoves.size()==1){
-                doMove(currentPoint, recentMoves, possibleMoves.get(0));
-            }
-            else {
-                tryEachRoute(currentPoint, recentMoves, possibleMoves);
-            }
-
-        }
-        return false;
+        Boolean gameResult = tryToSolveTheGame(grid, currentPoint, recentMoves);
+        System.out.println("Game result: " + gameResult);
+        return gameResult;
     }
 
-    private static boolean checkGameWasFinished( char[][] grid, Point currentPoint, Stack<Point> recentMoves) {
+    private static boolean tryToSolveTheGame(char[][] grid, Point currentPoint, Stack<Point> recentMoves) {
+
+        List<Point> possibleMoves = getPossibleMoves(currentPoint, recentMoves, grid);
+        while (possibleMoves.size() != 0) {
+            if (possibleMoves.size() == 1) {
+                makeMoveAndSaveItToRecentMoves(currentPoint, recentMoves, possibleMoves.get(0));
+            } else if (possibleMoves.size() > 1) {
+                System.out.println("entering inner loop level");
+                return tryEachRoute(grid, currentPoint, recentMoves, possibleMoves);
+            }
+        }
+        return checkGameWasFinished(grid, currentPoint, recentMoves);
+    }
+
+    private static boolean checkGameWasFinished(char[][] grid, Point currentPoint, Stack<Point> recentMoves) {
         boolean allFieldsWereUsed = checkAllFieldsWereUsed(grid, recentMoves);
         boolean endsWithX = grid[currentPoint.y][currentPoint.x] == 'X';
-        return allFieldsWereUsed && endsWithX;
+        boolean result = allFieldsWereUsed && endsWithX;
+        System.out.println("Game was successfully finished: " + result);
+        return result;
     }
 
     private static boolean checkAllFieldsWereUsed(char[][] grid, Stack<Point> recentMoves) {
         List<Point> allFieldsToUse = getAllFieldsToUse(grid);
-        for (Point p: allFieldsToUse){
-            if (!recentMoves.contains(p)){
+        for (Point p : allFieldsToUse) {
+            if (!recentMoves.contains(p)) {
                 System.out.println("Some fields were not used!");
                 return false;
             }
@@ -130,19 +132,35 @@ public class LineSafari {
         return allFieldsToUse;
     }
 
-    private static void tryEachRoute(Point currentPoint, Stack<Point> recentMoves, List<Point> possibleMoves) {
+    private static Boolean tryEachRoute(char[][] grid, Point currentPoint, Stack<Point> recentMoves, List<Point> possibleMoves) {
+        Point backUpPoint = (Point) currentPoint.clone();
+        Stack<Point> backupMoves = (Stack<Point>) recentMoves.clone();
+        boolean gameWasSolved = false;
+        for (Point p : possibleMoves) {
+            System.out.println("Trying with move: " + p);
+            makeMoveAndSaveItToRecentMoves(currentPoint, recentMoves, p);
+            possibleMoves.remove(p);
+            System.out.println("Alternative possible moves: " + possibleMoves);
+            if (tryToSolveTheGame(grid, currentPoint, recentMoves)) {
+                return true;
+            }
+            else{
+                System.out.println("Route failed. Backing up to crossroad at "+backUpPoint);
+                currentPoint = (Point) backUpPoint.clone();
+                recentMoves= (Stack<Point>) backupMoves.clone();
+            }
+        }
+        System.out.println("Did not find a sold from trying each route algorithm");
+        return false;
     }
 
-    private static void doMove(Point currentPoint, Stack<Point> recentMoves,  Point nextPoint) {
+    private static void makeMoveAndSaveItToRecentMoves(Point currentPoint, Stack<Point> recentMoves, Point nextMove) {
         recentMoves.add(new Point(currentPoint.x, currentPoint.y));
-        System.out.println("Added point to stack: "+ currentPoint.x + ":"+ currentPoint.y);
-        currentPoint.x=nextPoint.x;
-        currentPoint.y=nextPoint.y;
-        System.out.println("Moved to point: "+ currentPoint.x + ":"+ currentPoint.y);
+        System.out.println("Added point to stack: " + currentPoint.x + ":" + currentPoint.y);
+        currentPoint.x = nextMove.x;
+        currentPoint.y = nextMove.y;
+        System.out.println("Moved to point: " + currentPoint.x + ":" + currentPoint.y);
     }
-
-
-
 
     private static List<Point> getPossibleMoves(Point currentPoint, Stack<Point> recentMoves, char[][] grid) {
         List<Point> possibleMoves = new ArrayList<>();
@@ -159,14 +177,13 @@ public class LineSafari {
         if ((currentPoint.y - 1 >= 0) && (grid[currentPoint.y - 1][currentPoint.x] != ' ')) {
             possibleMoves.add(new Point(currentPoint.x, currentPoint.y - 1));
         }
-        System.out.println("recent moves"+ recentMoves);
-        for (Point m:recentMoves){
-                possibleMoves.remove(m);
+        System.out.println("recent moves" + recentMoves);
+        for (Point m : recentMoves) {
+            possibleMoves.remove(m);
         }
-        System.out.println("possible moves: "+ possibleMoves);
+        System.out.println("possible moves: " + possibleMoves);
         return possibleMoves;
     }
-
 
     private static Point findStart(char[][] grid) {
         for (int x = 0; x < grid[0].length; x++) {
@@ -181,7 +198,7 @@ public class LineSafari {
 
     private static Point findEnd(char[][] grid) {
         for (int x = grid[0].length - 1; x >= 0; x--) {
-            for (int y = grid.length-1; y >= 0; y--) {
+            for (int y = grid.length - 1; y >= 0; y--) {
                 if (grid[y][x] == 'X') {
                     return (new Point(x, y));
                 }
