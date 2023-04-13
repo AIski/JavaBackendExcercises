@@ -1,9 +1,6 @@
 package pl.alski;
 
-import pl.alski.excercises.CalculateFibonacciReturnCountOfDigitOccurrences;
-import pl.alski.excercises.easy.TwoToOne;
-import pl.alski.excercises.medium.PlayingWithDigits;
-import pl.alski.excercises.notFinished.LineSafari;
+import pl.alski.excercises.notFinished.CalculateFibonacciReturnCountOfDigitOccurrences;
 
 public class Main {
     public static void main(String[] args) {
@@ -52,8 +49,8 @@ public class Main {
 //        playingWithDigits.digPow(89,1);
 //        playingWithDigits.digPow(46288, 3);
 
-        CalculateFibonacciReturnCountOfDigitOccurrences fibonacci = new CalculateFibonacciReturnCountOfDigitOccurrences();
-//        fibonacci.FibDigits(10);
-        fibonacci.FibDigits(10000);
+//        CalculateFibonacciReturnCountOfDigitOccurrences fibonacci = new CalculateFibonacciReturnCountOfDigitOccurrences();
+////        fibonacci.FibDigits(10);
+//        fibonacci.FibDigits(10000);
     }
 }
