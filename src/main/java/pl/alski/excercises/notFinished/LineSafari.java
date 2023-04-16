@@ -2,9 +2,11 @@ package pl.alski.excercises.notFinished;
 
 
 import java.awt.*;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 public class LineSafari {
 
@@ -115,23 +117,45 @@ public class LineSafari {
         System.out.println("Starting point: " + startPoint.x + ":" + startPoint.y);
         System.out.println("End point: " + endPoint.x + ":" + endPoint.y);
 
-        Boolean gameResult = tryToSolveTheGame(grid, currentPoint, recentMoves);
+        Boolean gameResult = tryToSolveTheGame(grid, currentPoint, recentMoves, endPoint);
         System.out.println("Game result: " + gameResult);
         return gameResult;
     }
 
-    private static boolean tryToSolveTheGame(char[][] grid, Point currentPoint, Stack<Point> recentMoves) {
+    private static boolean tryToSolveTheGame(char[][] grid, Point currentPoint, Stack<Point> recentMoves, Point endPoint) {
         List<Point> possibleMoves = getPossibleMoves(currentPoint, recentMoves, grid);
+        Point lastMove = null;
+        if (!recentMoves.isEmpty()) {
+            lastMove = recentMoves.peek();
+        }
         while (possibleMoves.size() != 0) {
-            if ((possibleMoves.size() == 1) && checkThePathIsValid(grid, currentPoint, recentMoves.peek(), possibleMoves.get(0))) {
+            possibleMoves = getPossibleMoves(currentPoint, recentMoves, grid);
+
+            lastMove = getLastMoveFromStack(recentMoves);
+            if ((possibleMoves.size() == 1) && checkThePathIsValid(grid, currentPoint, lastMove, possibleMoves.get(0))) {
 
                 makeMoveAndSaveItToRecentMoves(currentPoint, recentMoves, possibleMoves.get(0));
-            } else if (possibleMoves.size() > 1) {
+                continue;
+            }
+            if (possibleMoves.size() > 1) {
                 System.out.println("entering inner loop level");
-                return tryEachRoute(grid, currentPoint, recentMoves, possibleMoves);
+                return tryEachRoute(grid, currentPoint, recentMoves, possibleMoves, endPoint);
             }
         }
+        if (currentPoint.x == endPoint.x && currentPoint.y == endPoint.y) {
+            addPointToRecentMoves(currentPoint, recentMoves);
+        }
+        System.out.println("No moves possible. CheckingGameWasFinished");
+        System.out.println(" ");
         return checkGameWasFinished(grid, currentPoint, recentMoves);
+    }
+
+    private static Point getLastMoveFromStack(Stack<Point> recentMoves) {
+        Point lastMove;
+        if (recentMoves.isEmpty()) {
+            lastMove = null;
+        } else lastMove = recentMoves.peek();
+        return lastMove;
     }
 
     private static List<Point> getPossibleMoves(Point currentPoint, Stack<Point> recentMoves, char[][] grid) {
@@ -149,89 +173,102 @@ public class LineSafari {
         if ((currentPoint.y - 1 >= 0) && (grid[currentPoint.y - 1][currentPoint.x] != ' ')) {
             possibleMoves.add(new Point(currentPoint.x, currentPoint.y - 1));
         }
-        System.out.println("recent moves" + recentMoves);
         for (Point m : recentMoves) {
             possibleMoves.remove(m);
         }
-        System.out.println("possible moves: " + possibleMoves);
+        possibleMoves = filterMoves(grid, possibleMoves, currentPoint, getLastMoveFromStack(recentMoves));
+        System.out.println("possible moves: ");
+        System.out.println(possibleMoves);
         return possibleMoves;
     }
 
-    private static boolean checkThePathIsValid(char[][] grid, Point currentPoint, Point previousPoint, Point nextPoint) {
+    private static List<Point> filterMoves(char[][] grid, List<Point> possibleMoves, Point currentPoint, Point previousPoint) {
+        List<Point> filteredMoves = possibleMoves.stream().filter(m -> checkThePathIsValid(grid, currentPoint, previousPoint, m)).collect(Collectors.toList());
+        System.out.println(filteredMoves.size() + " possible moves.");
+        return filteredMoves;
+    }
 
-        //TWO CHAR BANS
+    private static boolean checkThePathIsValid(char[][] grid, Point currentPoint, Point previousPoint, Point nextPoint) {
         // simple bans
         if (
-                ((gridAtPoint(grid, currentPoint) == '-') && (gridAtPoint(grid, nextPoint) == '|'))
-                        || ((gridAtPoint(grid, currentPoint) == '|') && (gridAtPoint(grid, nextPoint) == '-'))
-                        //harder 2char bans
-                        || ((gridAtPoint(grid, currentPoint) == '|') && (gridAtPoint(grid, nextPoint) == '+') && ((currentPoint.x) != nextPoint.x))
-                        || ((gridAtPoint(grid, currentPoint) == '+') && (gridAtPoint(grid, nextPoint) == '|') && ((currentPoint.x) != nextPoint.x))
-                        || ((gridAtPoint(grid, currentPoint) == '+') && (gridAtPoint(grid, nextPoint) == '-') && ((currentPoint.y) != nextPoint.y))
-                        || ((gridAtPoint(grid, currentPoint) == '-') && (gridAtPoint(grid, nextPoint) == '+') && ((currentPoint.y) != nextPoint.y))
-                        || ((gridAtPoint(grid, currentPoint) == '-') && (gridAtPoint(grid, nextPoint) == '-') && ((currentPoint.x) == nextPoint.x))
-                        || ((gridAtPoint(grid, currentPoint) == '|') && (gridAtPoint(grid, nextPoint) == '|') && ((currentPoint.y) == nextPoint.y))
-        )
-            return false;
-
-        if ((previousPoint != null) && (
-                    //  Simple Corner bans
-                        ((gridAtPoint(grid, previousPoint) == '-') && (gridAtPoint(grid, currentPoint) == '+') && (gridAtPoint(grid, nextPoint) == '-'))
-                                || ((gridAtPoint(grid, previousPoint) == '|') && (gridAtPoint(grid, currentPoint) == '+') && (gridAtPoint(grid, nextPoint) == '|'))
-                                // Harder corner bans
-                                //TODO: THIS CODE
-                                || ((gridAtPoint(grid, previousPoint) == '-') && (gridAtPoint(grid, currentPoint) == '+') && (gridAtPoint(grid, nextPoint) == '|')
-                                && (previousPoint.x==nextPoint.x))
-
+                (
+                        ((gridAtPoint(grid, currentPoint) == '-') && (gridAtPoint(grid, nextPoint) == '|')) ||
+                                ((gridAtPoint(grid, currentPoint) == '|') && (gridAtPoint(grid, nextPoint) == '-'))
+                                //harder 2char bans
+                                || ((gridAtPoint(grid, currentPoint) == '|') && (gridAtPoint(grid, nextPoint) == '+') && ((currentPoint.x) != nextPoint.x))
+                                || ((gridAtPoint(grid, currentPoint) == '+') && (gridAtPoint(grid, nextPoint) == '|') && ((currentPoint.x) != nextPoint.x))
+                                || ((gridAtPoint(grid, currentPoint) == '+') && (gridAtPoint(grid, nextPoint) == '-') && ((currentPoint.y) != nextPoint.y))
+                                || ((gridAtPoint(grid, currentPoint) == '-') && (gridAtPoint(grid, nextPoint) == '+') && ((currentPoint.y) != nextPoint.y))
+                                || ((gridAtPoint(grid, currentPoint) == '-') && (gridAtPoint(grid, nextPoint) == '-') && ((currentPoint.x) == nextPoint.x))
+                                || ((gridAtPoint(grid, currentPoint) == '|') && (gridAtPoint(grid, nextPoint) == '|') && ((currentPoint.y) == nextPoint.y))
                 )
+                        ||
+                        (
+                                (previousPoint != null) && (
+                                        ((gridAtPoint(grid, previousPoint) == '-') && (gridAtPoint(grid, currentPoint) == '+') && (gridAtPoint(grid, nextPoint) == '-'))
+                                                || ((gridAtPoint(grid, previousPoint) == '|') && (gridAtPoint(grid, currentPoint) == '+') && (gridAtPoint(grid, nextPoint) == '|'))
+                                                // Harder corner bans
+                                                || (((gridAtPoint(grid, previousPoint) == '-') || (gridAtPoint(grid, previousPoint) == 'X')) && (gridAtPoint(grid, currentPoint) == '+') && ((gridAtPoint(grid, nextPoint) == '|') || (gridAtPoint(grid, nextPoint) == 'X'))
+                                                && ((previousPoint.x == nextPoint.x) || (previousPoint.y == nextPoint.y)))
+                                                || (((gridAtPoint(grid, previousPoint) == '|') || (gridAtPoint(grid, previousPoint) == 'X'))
+                                                && (gridAtPoint(grid, currentPoint) == '+')
+                                                && ((gridAtPoint(grid, nextPoint) == '-') || (gridAtPoint(grid, nextPoint) == 'X'))
+                                                && ((previousPoint.x == nextPoint.x) || (previousPoint.y == nextPoint.y)))
+                                )
+                        )
         ) {
+            System.out.println("corner ban");
             return false;
         }
-
-
+        return true;
     }
-    //each 2
-        if(
 
-    gridAtPoint(grid, currentPoint) =='-')&&
-
-    gridAtPoint(grid, currentPoint) ==
-}
 
     private static char gridAtPoint(char[][] grid, Point point) {
         return grid[point.y][point.x];
     }
 
     private static void makeMoveAndSaveItToRecentMoves(Point currentPoint, Stack<Point> recentMoves, Point nextMove) {
-        recentMoves.add(new Point(currentPoint.x, currentPoint.y));
-        System.out.println("Added point to stack: " + currentPoint.x + ":" + currentPoint.y);
+        addPointToRecentMoves(currentPoint, recentMoves);
         currentPoint.x = nextMove.x;
         currentPoint.y = nextMove.y;
         System.out.println("Moved to point: " + currentPoint.x + ":" + currentPoint.y);
+        System.out.println(" ");
+
     }
 
-    private static Boolean tryEachRoute(char[][] grid, Point currentPoint, Stack<Point> recentMoves, List<Point> possibleMoves) {
+    private static void addPointToRecentMoves(Point currentPoint, Stack<Point> recentMoves) {
+        recentMoves.add(new Point(currentPoint.x, currentPoint.y));
+        System.out.println("Added point to stack: " + currentPoint.x + ":" + currentPoint.y);
+    }
+
+    private static Boolean tryEachRoute(char[][] grid, Point currentPoint, Stack<Point> recentMoves, List<Point> possibleMoves, Point endPoint) {
+        final int loopSize = possibleMoves.size();
         Point backUpPoint = (Point) currentPoint.clone();
         Stack<Point> backupMoves = (Stack<Point>) recentMoves.clone();
-        boolean gameWasSolved = false;
-        for (Point p : possibleMoves) {
-            System.out.println("Trying with move: " + p);
-            makeMoveAndSaveItToRecentMoves(currentPoint, recentMoves, p);
-            possibleMoves.remove(p);
-            System.out.println("Alternative possible moves: " + possibleMoves);
-            if (tryToSolveTheGame(grid, currentPoint, recentMoves)) {
+        for (int i = 0; i < loopSize; i++) {
+            System.out.println("Trying route with move: " + possibleMoves.get(0));
+            makeMoveAndSaveItToRecentMoves(currentPoint, recentMoves, possibleMoves.get(0));
+            possibleMoves.remove(0);
+            if (tryToSolveTheGame(grid, currentPoint, recentMoves, endPoint)) {
                 return true;
-            } else {
+            }
                 System.out.println("Route failed. Backing up to crossroad at " + backUpPoint);
+                System.out.println("Possible moves remaining inside loop: " + possibleMoves.size());
                 currentPoint = (Point) backUpPoint.clone();
                 recentMoves = (Stack<Point>) backupMoves.clone();
-            }
+                System.out.println("Last move: " + recentMoves.peek());
+                System.out.println("Current point: " + currentPoint);
+                System.out.println("Possible moves inside loop: " + possibleMoves);
         }
-        System.out.println("Did not find a sold from trying each route algorithm");
+        System.out.println("Did not find a solution from trying each route algorithm");
         return false;
     }
 
     private static boolean checkGameWasFinished(char[][] grid, Point currentPoint, Stack<Point> recentMoves) {
+        System.out.println("Checking if game was finished...");
+        System.out.println("recent moves: ");
+        System.out.println(recentMoves);
         boolean allFieldsWereUsed = checkAllFieldsWereUsed(grid, recentMoves);
         boolean endsWithX = grid[currentPoint.y][currentPoint.x] == 'X';
         boolean result = allFieldsWereUsed && endsWithX;
@@ -260,6 +297,7 @@ public class LineSafari {
                 }
             }
         }
+        System.out.println(allFieldsToUse);
         return allFieldsToUse;
     }
 
